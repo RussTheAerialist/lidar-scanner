@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
+#include "ofxGui.h"
 #include "ofxRPlidar.h"
 
 class ofApp : public ofBaseApp{
@@ -21,8 +22,11 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
+		void newFrame(const ofx::rplidar::Measurement& data);
 
 	private:
-		std::unique_ptr<ofxRPlidar> lidar;
-
+		std::unique_ptr<ofx::rplidar::ILidar> lidar;
+		bool present[360];
+		ofxPanel gui;
+		ofParameter<float> threshold;
 };
