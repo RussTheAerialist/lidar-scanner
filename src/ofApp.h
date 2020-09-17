@@ -26,7 +26,10 @@ class ofApp : public ofBaseApp{
 
 	private:
 		std::unique_ptr<ofx::rplidar::ILidar> lidar;
-		bool present[360];
+		bool which_buffer;
+		float buffer[32][2];
+
 		ofxPanel gui;
-		ofParameter<float> threshold;
+		ofParameter<float> bottom_distance;
+		ofParameter<float> top_distance;
 };
