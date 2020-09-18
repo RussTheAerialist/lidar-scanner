@@ -3,6 +3,9 @@
 #include "ofMain.h"
 #include "ofxGui.h"
 #include "ofxRPlidar.h"
+#include "ofxOsc.h"
+
+#define BINCOUNT 36
 
 class ofApp : public ofBaseApp{
 
@@ -26,10 +29,17 @@ class ofApp : public ofBaseApp{
 
 	private:
 		std::unique_ptr<ofx::rplidar::ILidar> lidar;
-		bool which_buffer;
-		float buffer[32][2];
+		bool which_buffer, debug_view;
+		float buffer[BINCOUNT][2];
+		bool change_mask[BINCOUNT];
 
 		ofxPanel gui;
+		ofxOscReceiver osc_recv;
+		ofxOscSender osc_send;
 		ofParameter<float> bottom_distance;
 		ofParameter<float> top_distance;
+		ofParameter<float> change_threshold;
+
+		void draw_normal(int i, int radius, float angle, float x, float y);
+		void draw_debug(int i, int radius, float angle, float x, float y);
 };
