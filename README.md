@@ -8,6 +8,9 @@ are averaged with the previous average value in the last frame.
 The Osc messages are filtered based on "significant" changes of a segment.  Significant is dictated by an absolute
 difference between the current frame and the previous frame's distance.
 
+This sketch does require my fork of [ofxRPlidar](https://github.com/RussTheAerialist/ofxRPlidar) which you'll want to
+install in your `addons` directory.
+
 ## OSC Output Structure (output)
 
 ## Argument definitions
