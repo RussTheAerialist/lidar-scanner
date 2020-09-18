@@ -30,7 +30,7 @@ class ofApp : public ofBaseApp{
 	private:
 		std::unique_ptr<ofx::rplidar::ILidar> lidar;
 		bool which_buffer, debug_view;
-		float buffer[BINCOUNT][2];
+		float buffer[2][BINCOUNT];
 		bool change_mask[BINCOUNT];
 
 		ofxPanel gui;

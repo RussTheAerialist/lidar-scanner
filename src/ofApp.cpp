@@ -20,8 +20,8 @@ void ofApp::setup(){
 	}
 
 	for(int i=0;i<BINCOUNT;i++) {
-		buffer[i][0] = 0;
-		buffer[i][1] = 0;
+		buffer[0][i] = 0;
+		buffer[1][i] = 0;
 	}
 
 	ofxGuiEnableHiResDisplay();
@@ -68,7 +68,7 @@ void ofApp::update(){
 	}
 
 	for(int i=0; i<BINCOUNT; i++) {
-		if (fabs(buffer[i][0] - buffer[i][1]) > change_threshold) {
+		if (fabs(buffer[0][i] - buffer[1][i]) > change_threshold) {
 			change_mask[i] = true;
 		} else {
 			change_mask[i] = false;
@@ -107,13 +107,13 @@ void ofApp::draw(){
 }
 
 void ofApp::draw_normal(int i, int radius, float angle, float x, float y) {
-		ofColor fill_color(ofMap(buffer[i][which_buffer ? 1 : 0], bottom_distance, top_distance, 255.0, 0.0));
+		ofColor fill_color(ofMap(buffer[which_buffer ? 1 : 0][i], bottom_distance, top_distance, 255.0, 0.0));
 		ofSetColor(fill_color);
 
 }
 
 void ofApp::draw_debug(int i, int radius, float angle, float x, float y) {
-	float value = ofMap(buffer[i][which_buffer ? 1 : 0], bottom_distance, top_distance, 255.0, 0.0);
+	float value = ofMap(buffer[which_buffer ? 1 : 0][i], bottom_distance, top_distance, 255.0, 0.0);
 	ofSetColor(change_mask[i] ? ofColor(value, 0, 0) : ofColor::black);
 }
 
@@ -142,9 +142,9 @@ void ofApp::newFrame(const ofx::rplidar::Measurement &data) {
 		// TODO: Yikes, this doesn't work the way I want it to. I'm not actually binning here.
 		// FIXME: Yup, bad design
 
-		float previous_value = buffer[binned_angle][which_buffer ? 0 : 1]; // TODO: MACRO buffer index calculation
+		float previous_value = buffer[which_buffer ? 0 : 1][binned_angle]; // TODO: MACRO buffer index calculation
 
-		buffer[binned_angle][which_buffer ? 0 : 1] = ofClamp((previous_value + radius) / 2.0, bottom_distance, top_distance);
+		buffer[which_buffer ? 0 : 1][binned_angle] = ofClamp((previous_value + radius) / 2.0, bottom_distance, top_distance);
 		// NOTE: Equal Weight of Current Value and Previous Value might need to be reevaluated at some point in the future
 
 		which_buffer = !which_buffer;
