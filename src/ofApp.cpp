@@ -134,19 +134,31 @@ void ofApp::newFrame(const ofx::rplidar::Measurement &data) {
 
 	// TODO: Need to lock when a new frame is coming in and lock on the update and draw cycles
 
+	// Clear current buffer
+	memset(buffer[which_buffer ? 0 : 1], 0, sizeof(float) * BINCOUNT);
+
+	// Accumulate Sums
 	for(size_t i=0; i<data.count; i++) {
 		 // TODO: Move this calculation and the other into the library
 		int angle = ofWrap(ceil(data.data[i].angle_z_q14 * 90.f / (1 << 14)), 0, 359);
 		float radius = data.data[i].dist_mm_q2 / 4.0f;
 		int binned_angle = (int)(BINCOUNT*((float)angle / (float)360));
-		// TODO: Yikes, this doesn't work the way I want it to. I'm not actually binning here.
-		// FIXME: Yup, bad design
 
-		float previous_value = buffer[which_buffer ? 0 : 1][binned_angle]; // TODO: MACRO buffer index calculation
-
-		buffer[which_buffer ? 0 : 1][binned_angle] = ofClamp((previous_value + radius) / 2.0, bottom_distance, top_distance);
+		buffer[which_buffer ? 0 : 1][binned_angle] += radius;;
 		// NOTE: Equal Weight of Current Value and Previous Value might need to be reevaluated at some point in the future
 	}
+
+	// Average Buffer with previous value
+	for(size_t i=0; i<BINCOUNT; i++) {
+		float previous_value = buffer[which_buffer ? 0 : 1][i]; // TODO: MACRO buffer index calculation
+		float current_value = buffer[which_buffer ? 1 : 0][i];
+
+		// TODO: Need to calculate 10+1 based on BINCOUNT
+
+		buffer[which_buffer ? 0 : 1][i] = ofClamp((previous_value + current_value) / 11.0, bottom_distance, top_distance);
+
+	}
+
 
 	which_buffer = !which_buffer;
 }
