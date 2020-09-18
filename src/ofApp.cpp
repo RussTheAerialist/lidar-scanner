@@ -7,7 +7,7 @@
 #define MAX_THRESHOLD 1000
 #define RECV_PORT 4560
 #define SEND_PORT 4561
-#define SEND_HOST "127.0.0.1"
+#define SEND_HOST "localhost"
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -19,16 +19,16 @@ void ofApp::setup(){
 		ofExit();
 	}
 
-	for(int i=0;i<BINCOUNT;i++) {
-		buffer[0][i] = 0;
-		buffer[1][i] = 0;
-	}
+	memset(buffer, 0, sizeof(float) * BINCOUNT * 2);
+	memset(change_mask, 0, sizeof(bool) * BINCOUNT);
+	memset(note_state, 0, sizeof(bool) * BINCOUNT);
 
 	ofxGuiEnableHiResDisplay();
 	gui.setup("Controls");
 	gui.add(bottom_distance.set("Bottom", 100, MIN_DISTANCE, MAX_DISTANCE));
 	gui.add(top_distance.set("Top", MAX_DISTANCE, MIN_DISTANCE, MAX_DISTANCE));
-	gui.add(change_threshold.set("Trigger Threshold", 10.0, 0.0, MAX_THRESHOLD));
+	gui.add(change_threshold.set("Change Threshold", 10.0, 0.0, MAX_THRESHOLD));
+	gui.add(note_threshold.set("Note Threshold", 0.5, 0.0, 1.0));
 	gui.loadFromFile("settings.xml");
 
 	ofAddListener(lidar->onNewFrameAvailable, this, &ofApp::newFrame);
@@ -70,10 +70,52 @@ void ofApp::update(){
 	for(int i=0; i<BINCOUNT; i++) {
 		if (fabs(buffer[0][i] - buffer[1][i]) > change_threshold) {
 			change_mask[i] = true;
+			notify(i, buffer[which_buffer ? 1 : 0][i]);
 		} else {
 			change_mask[i] = false;
 		}
 	}
+}
+
+void ofApp::notify(int deg, float value) {
+	float velocity = ofMap(value, bottom_distance, top_distance, 1.0, 0.0);
+	if (velocity > note_threshold) { // Is Note On?
+		if (note_state[deg]) // Note was already on
+			notify_move(deg, velocity);
+		else {
+			note_state[deg] = true;
+			notify_on(deg, velocity);
+		}
+	} else if (note_state[deg]) {
+		note_state[deg] = false;
+		notify_off(deg);
+	}
+}
+
+void ofApp::notify_off(int deg) {
+	ofxOscMessage msg;
+	msg.setAddress("/lidar/off");
+	msg.addIntArg(deg);
+
+	osc_send.sendMessage(msg);
+}
+
+void ofApp::notify_on(int deg, float value) {
+	ofxOscMessage msg;
+	msg.setAddress("/lidar/on");
+	msg.addIntArg(deg);
+	msg.addFloatArg(value);
+
+	osc_send.sendMessage(msg);
+}
+
+void ofApp::notify_move(int deg, float value) {
+	ofxOscMessage msg;
+	msg.setAddress("/lidar/move");
+	msg.addIntArg(deg);
+	msg.addFloatArg(value);
+
+	osc_send.sendMessage(msg);
 }
 
 //--------------------------------------------------------------
@@ -99,7 +141,12 @@ void ofApp::draw(){
 			ofBezierVertex(0, 0, radius, 0, x, y);
 			ofVertex(0, 0);
 		ofEndShape(true);
+		ofSetColor(note_state[i] ? ofColor::purple : ofColor::gray);
+		ofDrawCircle(0, ofMap(buffer[which_buffer ? 1 : 0][i], bottom_distance, top_distance, 10.0, 400.0), 5);
+
 		ofRotateRad(angle);
+
+
 	}
 	ofPopMatrix();
 
@@ -114,7 +161,7 @@ void ofApp::draw_normal(int i, int radius, float angle, float x, float y) {
 
 void ofApp::draw_debug(int i, int radius, float angle, float x, float y) {
 	float value = ofMap(buffer[which_buffer ? 1 : 0][i], bottom_distance, top_distance, 255.0, 0.0);
-	ofSetColor(change_mask[i] ? ofColor(value, 0, 0) : ofColor::black);
+	ofSetColor(change_mask[i] ? ofColor(value, 0, 0) : ofColor(0,0,0,0));
 }
 
 //--------------------------------------------------------------

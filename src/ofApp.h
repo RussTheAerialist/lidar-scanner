@@ -32,6 +32,7 @@ class ofApp : public ofBaseApp{
 		bool which_buffer, debug_view;
 		float buffer[2][BINCOUNT];
 		bool change_mask[BINCOUNT];
+		bool note_state[BINCOUNT];
 
 		ofxPanel gui;
 		ofxOscReceiver osc_recv;
@@ -39,7 +40,12 @@ class ofApp : public ofBaseApp{
 		ofParameter<float> bottom_distance;
 		ofParameter<float> top_distance;
 		ofParameter<float> change_threshold;
+		ofParameter<float> note_threshold;
 
 		void draw_normal(int i, int radius, float angle, float x, float y);
 		void draw_debug(int i, int radius, float angle, float x, float y);
+		void notify(int deg, float value);
+		void notify_move(int deg, float value);
+		void notify_on(int deg, float value);
+		void notify_off(int deg);
 };
