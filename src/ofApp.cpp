@@ -146,9 +146,9 @@ void ofApp::newFrame(const ofx::rplidar::Measurement &data) {
 
 		buffer[which_buffer ? 0 : 1][binned_angle] = ofClamp((previous_value + radius) / 2.0, bottom_distance, top_distance);
 		// NOTE: Equal Weight of Current Value and Previous Value might need to be reevaluated at some point in the future
-
-		which_buffer = !which_buffer;
 	}
+
+	which_buffer = !which_buffer;
 }
 
 //--------------------------------------------------------------
