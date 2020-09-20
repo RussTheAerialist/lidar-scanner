@@ -27,8 +27,9 @@ void ofApp::setup(){
 	gui.setup("Controls");
 	gui.add(bottom_distance.set("Bottom", 100, MIN_DISTANCE, MAX_DISTANCE));
 	gui.add(top_distance.set("Top", MAX_DISTANCE, MIN_DISTANCE, MAX_DISTANCE));
-	gui.add(change_threshold.set("Change Threshold", 10.0, 0.0, MAX_THRESHOLD));
+	gui.add(change_threshold.set("Change Threshold", 10.0, MIN_DISTANCE, MAX_THRESHOLD));
 	gui.add(note_threshold.set("Note Threshold", 0.5, 0.0, 1.0));
+	gui.add(debug_view.set("Debug View", false));
 	gui.loadFromFile("settings.xml");
 
 	ofAddListener(lidar->onNewFrameAvailable, this, &ofApp::newFrame);
@@ -55,7 +56,7 @@ void ofApp::update(){
 		} else if (msg.getAddress() == "/2/fader3")
 		{
 			float value = msg.getArgAsFloat(0);
-			change_threshold = ofMap(value, 0.0, 1.0, 10.0, MAX_THRESHOLD);
+			change_threshold = ofMap(value, 0.0, 1.0, MIN_DISTANCE, MAX_THRESHOLD);
 		} else if (msg.getAddress() == "/2/2nav3")
 		{
 			bool released = msg.getArgAsFloat(0) < 0.5;
@@ -80,12 +81,8 @@ void ofApp::update(){
 void ofApp::notify(int deg, float value) {
 	float velocity = ofMap(value, bottom_distance, top_distance, 1.0, 0.0);
 	if (velocity > note_threshold) { // Is Note On?
-		if (note_state[deg]) // Note was already on
-			notify_move(deg, velocity);
-		else {
-			note_state[deg] = true;
-			notify_on(deg, velocity);
-		}
+		note_state[deg] = true;
+		notify_on(deg, velocity);
 	} else if (note_state[deg]) {
 		note_state[deg] = false;
 		notify_off(deg);
@@ -130,19 +127,18 @@ void ofApp::draw(){
 	float y = radius * sin(angle);
 
 	for(int i=0; i<BINCOUNT; i++) {
-		if (debug_view) {
-			draw_debug(i, radius, angle, x, y);
-		} else {
-			draw_normal(i, radius, angle, x, y);
+		ofSetColor(ofColor::white);
+		float distance = ofMap(buffer[which_buffer ? 1 : 0][i], bottom_distance, top_distance, 10.0, 400.0);
+		ofDrawLine(-10, distance, 10, distance);
+		if (change_mask[i]) {
+			ofSetColor(ofColor::purple);
+			ofDrawCircle(0, distance, 5);
 		}
-		ofBeginShape();
-			ofVertex(0, 0); // Start at Center
-			ofVertex(radius, 0); // Move up to the outer radius of the circle
-			ofBezierVertex(0, 0, radius, 0, x, y);
-			ofVertex(0, 0);
-		ofEndShape(true);
-		ofSetColor(note_state[i] ? ofColor::purple : ofColor::gray);
-		ofDrawCircle(0, ofMap(buffer[which_buffer ? 1 : 0][i], bottom_distance, top_distance, 10.0, 400.0), 5);
+
+		if (note_state[i]) {
+			ofSetColor(ofColor::red);
+			ofDrawLine(0, 0, 0, distance);
+		}
 
 		ofRotateRad(angle);
 
@@ -184,7 +180,7 @@ void ofApp::newFrame(const ofx::rplidar::Measurement &data) {
 	// TODO: Need to lock when a new frame is coming in and lock on the update and draw cycles
 
 	// Clear current buffer
-	memset(buffer[which_buffer ? 0 : 1], 0, sizeof(float) * BINCOUNT);
+	memset(buffer[which_buffer ? 0 : 1], top_distance, sizeof(float) * BINCOUNT);
 
 	// Accumulate Sums
 	for(size_t i=0; i<data.count; i++) {
@@ -193,14 +189,14 @@ void ofApp::newFrame(const ofx::rplidar::Measurement &data) {
 		float radius = data.data[i].dist_mm_q2 / 4.0f;
 		int binned_angle = (int)(BINCOUNT*((float)angle / (float)360));
 
-		buffer[which_buffer ? 0 : 1][binned_angle] += radius;;
-		// NOTE: Equal Weight of Current Value and Previous Value might need to be reevaluated at some point in the future
+		float current_value = buffer[which_buffer ? 0 : 1][binned_angle];
+		buffer[which_buffer ? 0 : 1][binned_angle] += radius;
 	}
 
 	// Average Buffer with previous value
 	for(size_t i=0; i<BINCOUNT; i++) {
-		float previous_value = buffer[which_buffer ? 0 : 1][i]; // TODO: MACRO buffer index calculation
-		float current_value = buffer[which_buffer ? 1 : 0][i];
+		float previous_value = buffer[which_buffer ? 1 : 0][i]; // TODO: MACRO buffer index calculation
+		float current_value = buffer[which_buffer ? 0 : 1][i];
 
 		// TODO: Need to calculate 10+1 based on BINCOUNT
 

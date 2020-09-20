@@ -29,7 +29,7 @@ class ofApp : public ofBaseApp{
 
 	private:
 		std::unique_ptr<ofx::rplidar::ILidar> lidar;
-		bool which_buffer, debug_view;
+		bool which_buffer;
 		float buffer[2][BINCOUNT];
 		bool change_mask[BINCOUNT];
 		bool note_state[BINCOUNT];
@@ -41,6 +41,7 @@ class ofApp : public ofBaseApp{
 		ofParameter<float> top_distance;
 		ofParameter<float> change_threshold;
 		ofParameter<float> note_threshold;
+		ofParameter<bool> debug_view;
 
 		void draw_normal(int i, int radius, float angle, float x, float y);
 		void draw_debug(int i, int radius, float angle, float x, float y);
