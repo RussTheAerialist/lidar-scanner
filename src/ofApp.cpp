@@ -170,10 +170,12 @@ void ofApp::keyPressed(int key){
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key){
-	if (lidar->scanning()) {
-		lidar->stopScan();
-	} else {
-		lidar->startScan();
+	if (key == ' ') {
+		if (lidar->scanning()) {
+			lidar->stopScan();
+		} else {
+			lidar->startScan();
+		}
 	}
 }
 
