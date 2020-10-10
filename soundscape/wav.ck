@@ -19,24 +19,12 @@
 "sounds/clip18.wav",
 "sounds/clip19.wav",
 "sounds/clip20.wav",
-"sounds/clip21.wav",
-"sounds/clip22.wav",
-"sounds/clip23.wav",
-"sounds/clip24.wav",
-"sounds/clip25.wav",
-"sounds/clip26.wav",
-"sounds/clip27.wav",
-"sounds/clip28.wav",
-"sounds/clip29.wav",
-"sounds/clip30.wav",
-"sounds/clip31.wav",
-"sounds/clip32.wav",
-"sounds/clip33.wav",
-"sounds/clip34.wav",
-"sounds/clip35.wav" ] @=> string files[];
+"sounds/clip21.wav"
+ ] @=> string files[];
+files.cap() => int fileCount;
 
 SndBuf s[36];
-for( 0 => int i; i < 36; i++) {
+for( 0 => int i; i < fileCount; i++) {
   me.dir() + "/" + files[i] => s[i].read;
   s[i].samples() => s[i].pos;
   if (i%2 == 0) {
@@ -44,8 +32,13 @@ for( 0 => int i; i < 36; i++) {
   } else {
     s[i] => dac.right;
   }
-
 }
+
+SinOsc beep => dac;
+beep.freq(440);
+0.5::second => now;
+beep.op(0);
+
 OscRecv orecv;
 4561 => orecv.port;
 orecv.listen();
@@ -55,7 +48,7 @@ function void note_on() {
   while(true) {
     note_on => now;
     while(note_on.nextMsg() != 0) {
-      note_on.getInt() => int index;
+      note_on.getInt() % fileCount => int index;
       note_on.getFloat() => float velocity;
 
       velocity + 0.15 => s[index].rate;
@@ -82,7 +75,7 @@ function void note_move() {
   while(true) {
     note_move => now;
     while(note_move.nextMsg() != 0) {
-      note_move.getInt() => int index;
+      note_move.getInt() % fileCount => int index;
       note_move.getFloat() => float velocity;
 
       velocity + 0.15 => s[index].rate;
